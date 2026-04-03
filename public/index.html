@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAMZZ - Beli Key Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0c1a 0%, #03050a 100%);
+            font-family: 'Orbitron', monospace;
+            color: white;
+            min-height: 100vh;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 1px solid #4e73df;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #4e73df, #1cc88a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-buttons a {
+            background: transparent;
+            border: 1px solid #4e73df;
+            padding: 8px 20px;
+            margin-left: 15px;
+            border-radius: 30px;
+            color: white;
+            text-decoration: none;
+        }
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .hero h1 { font-size: 48px; margin-bottom: 20px; }
+        .hero span { color: #4e73df; }
+        .packages {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #4e73df;
+            border-radius: 20px;
+            padding: 30px;
+            width: 250px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .card:hover { transform: translateY(-10px); }
+        .price { font-size: 28px; color: #1cc88a; margin: 20px 0; }
+        .btn { background: #4e73df; padding: 12px; border-radius: 30px; border: none; color: white; cursor: pointer; width: 100%; }
+        footer { text-align: center; padding: 40px; color: #555; font-size: 12px; }
+        @media (max-width: 768px) {
+            .navbar { padding: 15px 20px; flex-direction: column; gap: 15px; }
+            .hero h1 { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">RAMZZ HOSTING</div>
+        <div class="nav-buttons">
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        </div>
+    </div>
+    <div class="hero">
+        <h1>Beli <span>Key Panel</span> Premium</h1>
+        <p>Pilih paket, bayar via QRIS, key langsung dikirim!</p>
+    </div>
+    <div class="packages">
+        <div class="card" onclick="buyPackage('Basic', 50000, 30)">
+            <h3>Basic</h3><p>30 Hari</p><div class="price">Rp50.000</div>
+            <button class="btn">Beli</button>
+        </div>
+        <div class="card" onclick="buyPackage('Premium', 100000, 90)">
+            <h3>Premium</h3><p>90 Hari</p><div class="price">Rp100.000</div>
+            <button class="btn">Beli</button>
+        </div>
+        <div class="card" onclick="buyPackage('Pro', 200000, 180)">
+            <h3>Pro</h3><p>180 Hari</p><div class="price">Rp200.000</div>
+            <button class="btn">Beli</button>
+        </div>
+        <div class="card" onclick="buyPackage('Ultimate', 500000, 365)">
+            <h3>Ultimate</h3><p>365 Hari</p><div class="price">Rp500.000</div>
+            <button class="btn">Beli</button>
+        </div>
+    </div>
+    <footer>© 2024 RAMZZ HOSTING | WA: 6283862592489</footer>
+    <script>
+        function buyPackage(name, price, days) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Silakan login dulu!');
+                window.location.href = '/login';
+                return;
+            }
+            localStorage.setItem('order_package', name);
+            localStorage.setItem('order_price', price);
+            localStorage.setItem('order_days', days);
+            window.location.href = '/dashboard-buyer';
+        }
+    </script>
+</body>
+</html>
