@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Buyer - RAMZZ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0c1a 0%, #03050a 100%);
+            font-family: 'Orbitron', monospace;
+            color: white;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 1px solid #4e73df;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+        .card {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4e73df;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        h2 { color: #4e73df; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: #4e73df; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; }
+        .badge.active { background: #1cc88a; }
+        .badge.expired { background: #e74a3b; }
+        .qrcode { text-align: center; margin: 20px 0; }
+        .qrcode img { background: white; padding: 15px; border-radius: 15px; }
+        .status-paid { background: #1cc88a20; border: 1px solid #1cc88a; border-radius: 10px; padding: 15px; margin-top: 20px; }
+        .key-box { background: #0a0a1a; border: 1px solid #1cc88a; border-radius: 10px; padding: 15px; font-family: monospace; }
+        button { background: #4e73df; border: none; padding: 8px 15px; border-radius: 8px; color: white; cursor: pointer; }
+        .logout { background: #e74a3b; }
+        .packages { display: flex; gap: 15px; flex-wrap: wrap; margin: 20px 0; }
+        .package-item { background: rgba(0,0,0,0.5); border: 1px solid #4e73df; border-radius: 12px; padding: 15px; width: 150px; text-align: center; cursor: pointer; }
+        @media (max-width: 768px) { .navbar { flex-direction: column; gap: 15px; } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo" style="font-size:24px;">RAMZZ</div>
+        <div>
+            <span id="username"></span>
+            <button class="logout" onclick="logout()" style="margin-left:15px;">Logout</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2>🛒 Order Key</h2>
+            <div class="packages">
+                <div class="package-item" onclick="createOrder(50000, 'Basic', 30)">Basic<br>Rp50.000<br><small>30 hari</small></div>
+                <div class="package-item" onclick="createOrder(100000, 'Premium', 90)">Premium<br>Rp100.000<br><small>90 hari</small></div>
+                <div class="package-item" onclick="createOrder(200000, 'Pro', 180)">Pro<br>Rp200.000<br><small>180 hari</small></div>
+                <div class="package-item" onclick="createOrder(500000, 'Ultimate', 365)">Ultimate<br>Rp500.000<br><small>365 hari</small></div>
+            </div>
+            <div id="paymentArea" style="display:none;">
+                <div class="qrcode" id="qrcode"></div>
+                <div id="paymentStatus"></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2>🔑 My Keys</h2>
+            <table id="keysTable"><thead><tr><th>Key</th><th>Paket</th><th>Expired</th><th>Status</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="card">
+            <h2>📞 Butuh Bantuan?</h2>
+            <p>WA: <a href="https://wa.me/6283862592489" style="color:#25D366;">6283862592489</a></p>
+        </div>
+    </div>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        
+        let checkInterval = null;
+        
+        async function loadUser() {
+            const res = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) document.getElementById('username').innerText = data.user.username;
+        }
+        
+        async function loadMyKeys() {
+            const res = await fetch('/api/my-keys', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.querySelector('#keysTable tbody');
+            tbody.innerHTML = '';
+            (data.keys || []).forEach(key => {
+                const isActive = new Date(key.expired) > new Date();
+                tbody.innerHTML += `<tr><td><code>${key.key}</code></td><td>${key.package}</td><td>${new Date(key.expired).toLocaleDateString()}</td><td><span class="badge ${isActive ? 'active' : 'expired'}">${isActive ? 'AKTIF' : 'EXPIRED'}</span></td></tr>`;
+            });
+        }
+        
+        async function createOrder(amount, packageName, days) {
+            const res = await fetch('/api/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ amount, packageName, hours: days * 24 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('paymentArea').style.display = 'block';
+                document.getElementById('qrcode').innerHTML = `<img src="data:image/png;base64,${data.qr_base64}" width="200"><br><small>Order ID: ${data.order_id}</small><br><small>Total: Rp${data.amount.toLocaleString()}</small>`;
+                document.getElementById('paymentStatus').innerHTML = '<div class="status-paid">⏳ Menunggu pembayaran...</div>';
+                if (checkInterval) clearInterval(checkInterval);
+                checkInterval = setInterval(() => checkPayment(data.order_id, data.amount), 3000);
+            } else {
+                alert('Gagal membuat order: ' + data.error);
+            }
+        }
+        
+        async function checkPayment(orderId, amount) {
+            const res = await fetch('/api/check-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ order_id: orderId, amount })
+            });
+            const data = await res.json();
+            if (data.status === 'completed') {
+                clearInterval(checkInterval);
+                document.getElementById('paymentStatus').innerHTML = `<div class="status-paid">✅ PEMBAYARAN BERHASIL!<br>Key: <div class="key-box">${data.key}</div></div>`;
+                loadMyKeys();
+            }
+        }
+        
+        function logout() { localStorage.clear(); window.location.href = '/login'; }
+        
+        loadUser();
+        loadMyKeys();
+    </script>
+</body>
+</html>
