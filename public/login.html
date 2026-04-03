@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RAMZZ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0c1a 0%, #03050a 100%);
+            font-family: 'Orbitron', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #4e73df;
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            text-align: center;
+        }
+        h2 { color: #4e73df; margin-bottom: 20px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #0a0a1a;
+            border: 1px solid #4e73df;
+            border-radius: 10px;
+            color: white;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4e73df;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .error { color: #e74a3b; margin-top: 10px; }
+        .link { margin-top: 15px; font-size: 12px; }
+        .link a { color: #4e73df; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🔐 LOGIN</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="doLogin()">Login</button>
+        <div id="errorMsg" class="error"></div>
+        <div class="link">Belum punya akun? <a href="/register">Register</a></div>
+    </div>
+    <script>
+        async function doLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.success) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                if (data.user.role === 'admin') {
+                    window.location.href = '/dashboard-admin';
+                } else {
+                    window.location.href = '/dashboard-buyer';
+                }
+            } else {
+                document.getElementById('errorMsg').innerText = data.error;
+            }
+        }
+    </script>
+</body>
+</html>
