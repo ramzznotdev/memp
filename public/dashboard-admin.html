@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - RAMZZ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0c1a 0%, #03050a 100%);
+            font-family: 'Orbitron', monospace;
+            color: white;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 1px solid #4e73df;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px; }
+        .card {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4e73df;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        h2 { color: #4e73df; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: rgba(0,0,0,0.5); border: 1px solid #4e73df; border-radius: 15px; padding: 20px; text-align: center; }
+        .stat-card h3 { font-size: 32px; color: #1cc88a; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: #4e73df; }
+        button { background: #e74a3b; border: none; padding: 5px 12px; border-radius: 5px; color: white; cursor: pointer; }
+        .logout { background: #e74a3b; padding: 8px 20px; border-radius: 20px; text-decoration: none; color: white; }
+        @media (max-width: 768px) { .stats { grid-template-columns: repeat(2,1fr); } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo" style="font-size:24px;">RAMZZ ADMIN</div>
+        <a href="#" class="logout" onclick="logout()">Logout</a>
+    </div>
+    <div class="container">
+        <div class="stats" id="stats"></div>
+        <div class="card">
+            <h2>👥 Daftar User</h2>
+            <table id="usersTable"><thead><tr><th>Username</th><th>Email</th><th>Role</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="card">
+            <h2>🔑 Daftar Key</h2>
+            <table id="keysTable"><thead><tr><th>Key</th><th>Buyer</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+        </div>
+    </div>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        
+        async function loadStats() {
+            const res = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card"><h3>${data.stats.totalUsers}</h3><p>Total User</p></div>
+                    <div class="stat-card"><h3>${data.stats.totalKeys}</h3><p>Total Key</p></div>
+                    <div class="stat-card"><h3>${data.stats.totalOrders}</h3><p>Total Order</p></div>
+                    <div class="stat-card"><h3>Rp${data.stats.totalRevenue.toLocaleString()}</h3><p>Revenue</p></div>
+                `;
+            }
+        }
+        
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
+            (data.users || []).forEach(user => {
+                tbody.innerHTML += `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.role}</td></tr>`;
+            });
+        }
+        
+        async function loadKeys() {
+            const res = await fetch('/api/admin/keys', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.querySelector('#keysTable tbody');
+            tbody.innerHTML = '';
+            (data.keys || []).forEach(key => {
+                const isActive = new Date(key.expired) > new Date();
+                tbody.innerHTML += `<tr><td><code>${key.key}</code></td><td>${key.buyer}</td><td>${new Date(key.expired).toLocaleDateString()}</td><td><span class="badge ${isActive ? 'active' : 'expired'}">${isActive ? 'AKTIF' : 'EXPIRED'}</span></td><td><button onclick="deleteKey('${key.key}')">Hapus</button></td></tr>`;
+            });
+        }
+        
+        async function deleteKey(key) {
+            if (!confirm('Hapus key ini?')) return;
+            await fetch(`/api/admin/delete-key/${key}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            loadKeys();
+            loadStats();
+        }
+        
+        function logout() { localStorage.clear(); window.location.href = '/login'; }
+        
+        loadStats();
+        loadUsers();
+        loadKeys();
+    </script>
+</body>
+</html>
